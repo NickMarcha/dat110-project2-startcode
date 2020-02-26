@@ -19,17 +19,26 @@ public class BrokerServer extends Thread {
 		Logger.log("Broker server : " + port);
 		
 		Storage storage = new Storage();
-		Dispatcher dispatcher = new Dispatcher(storage);
-		Broker broker = new Broker(dispatcher,port);
+		//Dispatcher dispatcher = new Dispatcher(storage);
+		Broker broker = new Broker(storage, port);
+		//Broker broker = new Broker(dispatcher,port);
 		
 		// start dispatcher and broker threads
-		dispatcher.start();
+		//dispatcher.start();
 		broker.start();
 		
 		// wait for termination of dispatcher and broker threads before stopping broker server
 		try {
+			broker.getClientThreads().forEach(ct -> {
+				try {
+					ct.join();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
 			broker.join();
-			dispatcher.join();
+			//dispatcher.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

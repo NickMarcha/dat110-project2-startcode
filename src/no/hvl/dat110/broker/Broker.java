@@ -1,5 +1,8 @@
 package no.hvl.dat110.broker;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import no.hvl.dat110.common.Logger;
 import no.hvl.dat110.common.Stopable;
 import no.hvl.dat110.messages.ConnectMsg;
@@ -15,13 +18,29 @@ public class Broker extends Stopable {
 	private int maxaccept = 0;
 	
 	private MessagingServer server;
-	private Dispatcher dispatcher;
-		
+	//private Dispatcher dispatcher;
+	private List<Dispatcher> dispatchers;
+	private Storage storage;
+	
+	public List<Dispatcher> getClientThreads(){
+		return dispatchers;
+	}
+
+	/*
 	public Broker (Dispatcher dispatcher,int port) {
 		super("Broker");
 		server = new MessagingServer(port);
 		this.dispatcher = dispatcher;
 	}
+	*/
+	public Broker (Storage storage, int port) {
+		super("Broker");
+		server = new MessagingServer(port);
+		this.storage = storage;
+		this.dispatchers = new ArrayList<>();
+		
+	}
+	
 	
 	public void setMaxAccept(int n) {
 		this.stopable = true;
@@ -58,7 +77,12 @@ public class Broker extends Stopable {
 		if (msg.getType() == MessageType.CONNECT) {
 			
 			ConnectMsg cmsg = (ConnectMsg) msg;
-			dispatcher.onConnect(cmsg, connection);
+			
+			ClientSession CS = new ClientSession(msg.getUser(),connection);
+			Dispatcher newDisp = new Dispatcher(storage,CS);
+			dispatchers.add(newDisp);
+			newDisp.start();
+			
 			
 		} else {
 			System.out.println("Protocol error: first message should be connect");
